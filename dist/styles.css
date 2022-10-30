@@ -1,0 +1,39 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+
+/*HEADER*/
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 10vh;
+    border-bottom: solid 1px black;
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.header-icon {
+    width: 15%;
+    font-size: 36px !important;
+}
+
+.header-title-span {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    width: calc(85%);
+    padding-left: 8px;
+}
+
+.header-title-span h1 {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    float: left;
+}

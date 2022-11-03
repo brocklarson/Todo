@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    font-family: sans-serif;
     margin: 0;
     padding: 0;
 }
@@ -8,32 +9,158 @@
 /*HEADER*/
 
 .header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 10vh;
+    align-items: center;
     border-bottom: solid 1px black;
     display: flex;
-    align-items: center;
-    text-align: center;
+    height: 10vh;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 100vw;
+}
+
+.hamburger-menu {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    width: 15%;
 }
 
 .header-icon {
-    width: 15%;
     font-size: 36px !important;
 }
 
 .header-title-span {
     display: inline-block;
-    white-space: nowrap;
+    flex-grow: 1;
     overflow: hidden;
-    width: calc(85%);
     padding-left: 8px;
+    white-space: nowrap;
 }
 
 .header-title-span h1 {
-    text-overflow: ellipsis;
-    overflow: hidden;
     float: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* MENU SECTION */
+
+.menu-container {
+    background: yellow;
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    left: 0;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    position: fixed;
+    top: 0;
+    width: 80vw;
+    z-index: 2;
+}
+
+.menu-container.active {
+    animation: slideInFromLeft 0.25s ease 0s 1;
+    display: flex;
+}
+
+.app-title {
+    font-size: 2.0rem;
+    margin-bottom: 8px;
+    padding: 20px 8px;
+    width: 100%;
+}
+
+.menu-lists {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 16px 16px 4px 16px;
+}
+
+.menu-buttons {
+    align-items: center;
+    background: none;
+    border-bottom-right-radius: 50px;
+    border-top-right-radius: 50px;
+    border: none;
+    display: flex;
+    font-size: 1.25rem;
+    margin: 4px 16px 4px 0;
+    padding: 8px 16px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.menu-buttons.selected {
+    background: greenyellow;
+}
+
+.menu-buttons span {
+    margin: 0 2px;
+}
+
+.menu-bg {
+    background: black;
+    cursor: pointer;
+    display: none;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 100vw;
+    z-index: 1;
+}
+
+.menu-bg.active {
+    animation: fadeIn 0.25s ease 0s 1 forwards;
+    display: block;
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0%;
+    }
+    to {
+        opacity: 30%;
+    }
+}
+
+
+/* FOOTER */
+
+footer {
+    align-items: center;
+    background-color: white;
+    bottom: 0;
+    color: black;
+    display: flex;
+    font-family: sans-serif;
+    font-size: 1em;
+    gap: 10px;
+    justify-content: center;
+    padding: 8px 0 8px 0;
+    position: fixed;
+    width: 100%;
+}
+
+.fa-github {
+    color: black;
+    font-size: 1em;
+    transition: transform 0.3s ease-in-out;
+}
+
+.fa-github:hover {
+    transform: rotate(360deg) scale(1.2);
 }

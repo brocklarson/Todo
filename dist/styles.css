@@ -49,8 +49,8 @@
 /* MENU SECTION */
 
 .menu-container {
-    background: yellow;
-    display: none;
+    background: orange;
+    display: flex;
     flex-direction: column;
     height: 100vh;
     left: 0;
@@ -60,11 +60,12 @@
     top: 0;
     width: 80vw;
     z-index: 2;
+    transform: translateX(-100%);
 }
 
 .menu-container.active {
-    animation: slideInFromLeft 0.25s ease 0s 1;
-    display: flex;
+    transform: translateX(0);
+    transition: 0.25s;
 }
 
 .app-title {
@@ -86,12 +87,17 @@
     border-bottom-right-radius: 50px;
     border-top-right-radius: 50px;
     border: none;
+    cursor: pointer;
     display: flex;
     font-size: 1.25rem;
     margin: 4px 16px 4px 0;
     padding: 8px 16px;
     text-align: left;
     white-space: nowrap;
+}
+
+.menu-buttons:hover {
+    background: lightblue;
 }
 
 .menu-buttons.selected {
@@ -105,36 +111,21 @@
 .menu-bg {
     background: black;
     cursor: pointer;
-    display: none;
+    display: block;
     height: 100vh;
     position: fixed;
     right: 0;
     top: 0;
     width: 100vw;
     z-index: 1;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .menu-bg.active {
-    animation: fadeIn 0.25s ease 0s 1 forwards;
-    display: block;
-}
-
-@keyframes slideInFromLeft {
-    from {
-        transform: translateX(-100%);
-    }
-    to {
-        transform: translateX(0);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0%;
-    }
-    to {
-        opacity: 30%;
-    }
+    opacity: 0.3;
+    pointer-events: all;
+    transition: 0.25s;
 }
 
 

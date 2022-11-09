@@ -106,6 +106,7 @@
 
 .menu-buttons span {
     margin: 0 2px;
+    pointer-events: none;
 }
 
 .menu-bg {

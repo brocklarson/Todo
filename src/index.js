@@ -21,11 +21,19 @@ class List {
         return this.active;
     }
 
-    /* add item, remove item, set active(?) */
+    /* add item, remove item*/
 }
 
 const menuModule = () => {
     let _Lists = [];
+
+    function closeMenu() {
+        const menuContainer = document.getElementById(`menu`);
+        const menuBg = document.getElementById(`menuBg`);
+
+        menuContainer.classList.remove(`active`);
+        menuBg.classList.remove(`active`);
+    };
 
     function setActiveList(event) {
         _Lists.forEach(list => {
@@ -35,9 +43,14 @@ const menuModule = () => {
         activeList.isActive = true;
     };
 
+    function handleListClick(event) {
+        setActiveList(event);
+        closeMenu();
+    };
+
     function setBtnListener(btn) {
-        btn.addEventListener(`click`, setActiveList);
-    }
+        btn.addEventListener(`click`, handleListClick);
+    };
 
     function makeBtn(list) {
         const btn = document.createElement(`button`);
@@ -67,6 +80,24 @@ const menuModule = () => {
         return btn;
     };
 
+    function setupList(title, icon = `checklist`, custom = true) {
+        let list = new List(title, [], icon, custom);
+        let container;
+
+        if (custom == false) container = document.getElementById(`premadeLists`);
+        else container = document.getElementById(`customLists`);
+
+        const btn = makeBtn(list);
+        container.appendChild(btn);
+
+        _Lists.push(list);
+    };
+
+    function addNewList() {
+        const listName = prompt(`New List Name:`);
+        setupList(listName, `checklist`, true);
+    };
+
     function initLists() {
         setupList(`Today`, `today`, false);
         setupList(`Tomorrow`, `event`, false);
@@ -74,27 +105,7 @@ const menuModule = () => {
 
         setupList(`To-Do`, `checklist`, true);
         ////Search local storage and add any lists to customLists here
-    }
-
-    function setupList(title, icon = `checklist`, custom = true) {
-        let container;
-        let list = new List(title, [], icon, custom);
-
-        if (custom == false) {
-            container = document.getElementById(`premadeLists`);
-        } else {
-            container = document.getElementById(`customLists`);
-        }
-        _Lists.push(list);
-
-        const btn = makeBtn(list);
-        container.appendChild(btn);
     };
-
-    function addNewList() {
-        const listName = prompt(`New List Name:`);
-        setupList(listName, `checklist`, true);
-    }
 
     function addListListener() {
         const addListBtn = document.getElementById(`addList`);
@@ -119,8 +130,8 @@ const mainScreenModule = () => {
             if (!menuBg.classList.contains(`active`)) menuBg.classList.add(`active`);
         });
         menuBg.addEventListener(`click`, function() {
-            if (menuContainer.classList.contains(`active`)) menuContainer.classList.remove(`active`);
-            if (menuBg.classList.contains(`active`)) menuBg.classList.remove(`active`);
+            menuContainer.classList.remove(`active`);
+            menuBg.classList.remove(`active`);
         });
 
     };

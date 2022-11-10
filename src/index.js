@@ -1,27 +1,42 @@
 class List {
     constructor(title,
         items = [],
-        icon = `checklist`
+        icon = `checklist`,
+        custom = true,
+        active = false
     ) {
         this.title = title
         this.items = items
         this.icon = icon
+        this.custom = custom
+        this.active = active
     };
-    /* add item, remove item */
+
+    set isActive(value) {
+        if (value) this.active = true;
+        else this.active = false;
+    }
+
+    get isActive() {
+        return this.active;
+    }
+
+    /* add item, remove item, set active(?) */
 }
 
 const menuModule = () => {
-    let premadeLists = [];
-    let customLists = [];
-    let activeList = `To-Do`;
+    let _Lists = [];
 
-    function initLists() {
-        premadeLists.push(new List(`Today`, [], `today`));
-        premadeLists.push(new List(`Tomorrow`, [], `event`));
-        premadeLists.push(new List(`This Week`, [], `date_range`));
+    function setActiveList(event) {
+        _Lists.forEach(list => {
+            list.isActive = false;
+        });
+        const activeList = _Lists.find(list => list.title == event.target.name);
+        activeList.isActive = true;
+    };
 
-        customLists.push(new List(`To-Do`, [], `checklist`));
-        ////Search local storage and add any lists to customLists here
+    function setBtnListener(btn) {
+        btn.addEventListener(`click`, setActiveList);
     }
 
     function makeBtn(list) {
@@ -41,52 +56,54 @@ const menuModule = () => {
         btn.appendChild(iconSpan);
         btn.appendChild(btnText);
 
+        if (list.custom == true) {
+            const removeIcon = document.createElement(`span`);
+            removeIcon.classList.add(`material-symbols-outlined`, `remove-icon`);
+            removeIcon.innerText = `close`;
+
+            btn.appendChild(removeIcon);
+        }
+        setBtnListener(btn);
         return btn;
     };
 
-    function setupLists(lists) {
-        const container = document.getElementById(lists);
+    function initLists() {
+        setupList(`Today`, `today`, false);
+        setupList(`Tomorrow`, `event`, false);
+        setupList(`This Week`, `date_range`, false);
 
-        eval(lists).forEach(list => {
-            const btn = makeBtn(list);
-            container.appendChild(btn);
+        setupList(`To-Do`, `checklist`, true);
+        ////Search local storage and add any lists to customLists here
+    }
 
-            if (lists === `customLists`) {
-                const removeIcon = document.createElement(`span`);
-                removeIcon.classList.add(`material-symbols-outlined`, `remove-icon`);
-                removeIcon.innerText = `close`;
+    function setupList(title, icon = `checklist`, custom = true) {
+        let container;
+        let list = new List(title, [], icon, custom);
 
-                btn.appendChild(removeIcon)
-            }
-        });
+        if (custom == false) {
+            container = document.getElementById(`premadeLists`);
+        } else {
+            container = document.getElementById(`customLists`);
+        }
+        _Lists.push(list);
+
+        const btn = makeBtn(list);
+        container.appendChild(btn);
     };
 
     function addNewList() {
         const listName = prompt(`New List Name:`);
-        customLists.push(new List(listName, [], `checklist`));
-
-        const btn = makeBtn(customLists.at(-1));
-        document.getElementById(`customLists`).appendChild(btn);
-        //Need add new list to have a remove icon. Maybe change this function to just remove lists and the reset up each time? Or make another function that makes that icon?
+        setupList(listName, `checklist`, true);
     }
 
-    function setActiveList(e) {
-        activeList = e.target.id;
-    };
-
-    function initListeners() {
-        const btns = document.querySelectorAll(`.menu-buttons`);
+    function addListListener() {
         const addListBtn = document.getElementById(`addList`);
-
-        btns.forEach(btn => btn.addEventListener(`click`, setActiveList));
         addListBtn.addEventListener(`click`, addNewList);
     };
 
-    (function initMenu() {
+    (function init() {
         initLists();
-        setupLists(`premadeLists`);
-        setupLists(`customLists`);
-        initListeners();
+        addListListener();
     }());
 };
 

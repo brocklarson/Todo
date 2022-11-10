@@ -61,6 +61,7 @@
     width: 80vw;
     z-index: 2;
     transform: translateX(-100%);
+    padding-bottom: 5vh;
 }
 
 .menu-container.active {
@@ -81,6 +82,12 @@
     margin: 16px 16px 4px 16px;
 }
 
+.list-container {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
 .menu-buttons {
     align-items: center;
     background: none;
@@ -94,6 +101,7 @@
     padding: 8px 16px;
     text-align: left;
     white-space: nowrap;
+    width: 85%;
 }
 
 .menu-buttons:hover {
@@ -107,6 +115,16 @@
 .menu-buttons span {
     margin: 0 2px;
     pointer-events: none;
+}
+
+.remove-icon {
+    display: none !important;
+    margin-left: auto !important;
+    pointer-events: all !important;
+}
+
+.menu-buttons:hover .remove-icon {
+    display: inline-block !important;
 }
 
 .menu-bg {

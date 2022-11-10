@@ -11,13 +11,20 @@ class List {
 }
 
 const menuModule = () => {
-    const menu = document.getElementById(`menu`);
     let premadeLists = [];
     let customLists = [];
     let activeList = `To-Do`;
 
-    function addList(list) {
-        const menu = document.getElementById(`menu`);
+    function initLists() {
+        premadeLists.push(new List(`Today`, [], `today`));
+        premadeLists.push(new List(`Tomorrow`, [], `event`));
+        premadeLists.push(new List(`This Week`, [], `date_range`));
+
+        customLists.push(new List(`To-Do`, [], `checklist`));
+        ////Search local storage and add any lists to customLists here
+    }
+
+    function makeBtn(list) {
         const btn = document.createElement(`button`);
 
         btn.classList.add(`menu-buttons`);
@@ -30,85 +37,81 @@ const menuModule = () => {
 
         const btnText = document.createElement(`span`);
         btnText.innerText = list.title;
-        //return btn here instead and move appendChild to other function
-        menu.appendChild(btn);
+
         btn.appendChild(iconSpan);
         btn.appendChild(btnText);
 
+        return btn;
     };
 
-    function createLists() {
-        premadeLists.push(new List(`Today`, [], `today`));
-        premadeLists.push(new List(`Tomorrow`, [], `event`));
-        premadeLists.push(new List(`This Week`, [], `date_range`));
+    function setupLists(lists) {
+        const container = document.getElementById(lists);
 
-        customLists.push(new List(`To-Do`, [], `checklist`));
-        ////Search local storage and add any lists to customLists here
+        eval(lists).forEach(list => {
+            const btn = makeBtn(list);
+            container.appendChild(btn);
+
+            if (lists === `customLists`) {
+                const removeIcon = document.createElement(`span`);
+                removeIcon.classList.add(`material-symbols-outlined`, `remove-icon`);
+                removeIcon.innerText = `close`;
+
+                btn.appendChild(removeIcon)
+            }
+        });
+    };
+
+    function addNewList() {
+        const listName = prompt(`New List Name:`);
+        customLists.push(new List(listName, [], `checklist`));
+
+        const btn = makeBtn(customLists.at(-1));
+        document.getElementById(`customLists`).appendChild(btn);
+        //Need add new list to have a remove icon. Maybe change this function to just remove lists and the reset up each time? Or make another function that makes that icon?
     }
-
-    function setupTitle() {
-        const title = document.createElement(`h1`);
-        title.classList.add(`app-title`);
-        title.innerText = `Tracker`;
-        menu.appendChild(title);
-    };
-
-    function setupListHeading() {
-        const listsHeading = document.createElement(`p`);
-        listsHeading.classList.add(`menu-lists`);
-        listsHeading.innerText = `Lists`;
-        menu.appendChild(listsHeading);
-    };
-
-    function setupPremadeLists() {
-        premadeLists.forEach(list => addList(list));
-    };
-
-    function setupCustomLists() {
-        customLists.forEach(list => addList(list));
-    };
 
     function setActiveList(e) {
         activeList = e.target.id;
     };
 
-    function getActiveList() {
-        console.log(activeList);
-        return activeList;
-    };
-
-    function createEventListeners() {
+    function initListeners() {
         const btns = document.querySelectorAll(`.menu-buttons`);
+        const addListBtn = document.getElementById(`addList`);
+
         btns.forEach(btn => btn.addEventListener(`click`, setActiveList));
+        addListBtn.addEventListener(`click`, addNewList);
     };
 
-    (function setupMenu() {
-        createLists();
-        setupTitle();
-        setupPremadeLists();
-        setupListHeading();
-        setupCustomLists();
-        createEventListeners();
+    (function initMenu() {
+        initLists();
+        setupLists(`premadeLists`);
+        setupLists(`customLists`);
+        initListeners();
     }());
-
 };
 
+const mainScreenModule = () => {
+
+    function initListeners() {
+        const menuButton = document.getElementById(`menuBtn`);
+        const menuContainer = document.getElementById(`menu`);
+        const menuBg = document.getElementById(`menuBg`);
+
+        menuButton.addEventListener(`click`, function() {
+            if (!menuContainer.classList.contains(`active`)) menuContainer.classList.add(`active`);
+            if (!menuBg.classList.contains(`active`)) menuBg.classList.add(`active`);
+        });
+        menuBg.addEventListener(`click`, function() {
+            if (menuContainer.classList.contains(`active`)) menuContainer.classList.remove(`active`);
+            if (menuBg.classList.contains(`active`)) menuBg.classList.remove(`active`);
+        });
+
+    };
+
+    (function init() {
+        initListeners();
+    }());
+}
+
+mainScreenModule();
 menuModule();
-
-(function initEvents() {
-    const menuButton = document.getElementById(`menuBtn`);
-    const menuContainer = document.getElementById(`menu`);
-    const menuBg = document.getElementById(`menuBg`);
-    const addListBtn = document.getElementById(`AddList`);
-
-    menuButton.addEventListener(`click`, function() {
-        if (!menuContainer.classList.contains(`active`)) menuContainer.classList.add(`active`);
-        if (!menuBg.classList.contains(`active`)) menuBg.classList.add(`active`);
-    });
-    menuBg.addEventListener(`click`, function() {
-        if (menuContainer.classList.contains(`active`)) menuContainer.classList.remove(`active`);
-        if (menuBg.classList.contains(`active`)) menuBg.classList.remove(`active`);
-    });
-    //addListBtn.addEventListener(`click`, addNewList);
-
-}());

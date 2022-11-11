@@ -24,8 +24,8 @@ class List {
     /* add item, remove item*/
 }
 
-const menuModule = () => {
-    let _Lists = [];
+const menuModule = (() => {
+    let LISTS = [];
 
     function closeMenu() {
         const menuContainer = document.getElementById(`menu`);
@@ -36,11 +36,16 @@ const menuModule = () => {
     };
 
     function setActiveList(event) {
-        _Lists.forEach(list => {
+        LISTS.forEach(list => {
             list.isActive = false;
         });
-        const activeList = _Lists.find(list => list.title == event.target.name);
+        const activeList = LISTS.find(list => list.title == event.target.name);
         activeList.isActive = true;
+
+        document.querySelectorAll(`.selected`).forEach(el => {
+            el.classList.remove(`selected`);
+        });
+        event.target.classList.add(`selected`);
     };
 
     function handleListClick(event) {
@@ -69,13 +74,6 @@ const menuModule = () => {
         btn.appendChild(iconSpan);
         btn.appendChild(btnText);
 
-        if (list.custom == true) {
-            const removeIcon = document.createElement(`span`);
-            removeIcon.classList.add(`material-symbols-outlined`, `remove-icon`);
-            removeIcon.innerText = `close`;
-
-            btn.appendChild(removeIcon);
-        }
         setBtnListener(btn);
         return btn;
     };
@@ -90,7 +88,7 @@ const menuModule = () => {
         const btn = makeBtn(list);
         container.appendChild(btn);
 
-        _Lists.push(list);
+        LISTS.push(list);
     };
 
     function addNewList() {
@@ -112,13 +110,20 @@ const menuModule = () => {
         addListBtn.addEventListener(`click`, addNewList);
     };
 
+    const getLists = () => {
+        return LISTS;
+    }
+
     (function init() {
         initLists();
         addListListener();
     }());
-};
 
-const mainScreenModule = () => {
+    return { getLists };
+})();
+
+const mainScreenModule = (() => {
+    let LISTS = menuModule.getLists();
 
     function initListeners() {
         const menuButton = document.getElementById(`menuBtn`);
@@ -136,10 +141,20 @@ const mainScreenModule = () => {
 
     };
 
+    function getActiveList() {
+        let activeList = LISTS.find(list => list.active == true);
+        if (!activeList) activeList = LISTS[0];
+        return activeList.title;
+    };
+
+    function setupActiveList() {
+        //Update Header Title
+        const headerListName = document.getElementById(`headerListName`);
+        headerListName.innerText = getActiveList();
+    }
+
     (function init() {
         initListeners();
+        setupActiveList();
     }());
-}
-
-mainScreenModule();
-menuModule();
+})();

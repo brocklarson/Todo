@@ -5,6 +5,16 @@
     padding: 0;
 }
 
+:root {
+    --primary-color: #FAF7F0;
+    /*CDFCF6;*/
+    --secondary-color: #BCCEF8;
+    --accent-color: #98A8F8;
+    --offwhite-background: #FAF7F0;
+    --font-color: black;
+    --shadow-color: #06283D;
+}
+
 
 /*HEADER*/
 
@@ -49,7 +59,7 @@
 /* MENU SECTION */
 
 .menu-container {
-    background: orange;
+    background: var(--primary-color);
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -105,11 +115,12 @@
 }
 
 .menu-buttons:hover {
-    background: lightblue;
+    background: var(--accent-color) !important;
+    transform: scale(1.03);
 }
 
 .menu-buttons.selected {
-    background: greenyellow;
+    background: var(--secondary-color);
 }
 
 .menu-buttons span {
@@ -117,18 +128,8 @@
     pointer-events: none;
 }
 
-.remove-icon {
-    display: none !important;
-    margin-left: auto !important;
-    pointer-events: all !important;
-}
-
-.menu-buttons:hover .remove-icon {
-    display: inline-block !important;
-}
-
 .menu-bg {
-    background: black;
+    background: var(--shadow-color);
     cursor: pointer;
     display: block;
     height: 100vh;

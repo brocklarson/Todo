@@ -1,3 +1,5 @@
+import { events } from './pubsub.js';
+
 class List {
     constructor(title,
         items = [],
@@ -46,6 +48,9 @@ const menuModule = (() => {
             el.classList.remove(`selected`);
         });
         event.target.classList.add(`selected`);
+
+        events.publish(`listUpdate`, LISTS);
+        events.publish(`changeActiveList`, activeList);
     };
 
     function handleListClick(event) {
@@ -89,6 +94,8 @@ const menuModule = (() => {
         container.appendChild(btn);
 
         LISTS.push(list);
+
+        events.publish(`listUpdate`, LISTS);
     };
 
     function addNewList() {
@@ -123,12 +130,84 @@ const menuModule = (() => {
 })();
 
 const mainScreenModule = (() => {
-    let LISTS = menuModule.getLists();
+    let LISTS = [];
+
+    function getActiveList() {
+        let activeList = LISTS.find(list => list.active == true);
+        if (!activeList) activeList = LISTS[0];
+        return activeList.title;
+    };
+
+    function updateActiveList() {
+        //Update Header Title
+        const headerListName = document.getElementById(`headerListName`);
+        headerListName.innerText = getActiveList();
+    }
+
+    function updateLists(pubsubData) {
+        LISTS = pubsubData;
+    }
+
+    function getStartupList() {
+        LISTS = menuModule.getLists();
+        updateActiveList();
+    }
+
+    function updateCheckbox(event) {
+        const checkbox = event.target;
+        const li = event.target.parentNode
+        const text = li.children[1];
+
+        if (checkbox.innerText === `check_box_outline_blank`) {
+            checkbox.innerText = `check_box`;
+            text.style.setProperty(`text-decoration`, `line-through`);
+            li.style.setProperty(`opacity`, `50%`);
+        } else {
+            checkbox.innerText = `check_box_outline_blank`;
+            text.style.setProperty(`text-decoration`, `none`);
+            li.style.setProperty(`opacity`, `100%`);
+        }
+    }
+
+    function expandItem(event) {
+        return;
+    }
+
+    function setItemListener(icon, itemText) {
+        icon.addEventListener('click', updateCheckbox);
+        itemText.addEventListener('click', expandItem);
+    }
+
+    function setupNewItem(itemName) {
+        const ul = document.getElementById(`listItems`)
+
+        const li = document.createElement(`li`);
+        li.classList.add(`list-item`);
+
+        const icon = document.createElement(`span`);
+        icon.classList.add(`material-symbols-outlined`);
+        icon.innerText = `check_box_outline_blank`;
+
+        const itemText = document.createElement(`span`);
+        itemText.innerText = itemName;
+
+        ul.insertBefore(li, document.getElementById(`addItem`));
+        li.appendChild(icon);
+        li.appendChild(itemText);
+
+        setItemListener(icon, itemText);
+    }
+
+    function addItem() {
+        const itemName = prompt(`New List Item:`);
+        setupNewItem(itemName)
+    }
 
     function initListeners() {
         const menuButton = document.getElementById(`menuBtn`);
         const menuContainer = document.getElementById(`menu`);
         const menuBg = document.getElementById(`menuBg`);
+        const addItemBtn = document.getElementById(`addItem`);
 
         menuButton.addEventListener(`click`, function() {
             if (!menuContainer.classList.contains(`active`)) menuContainer.classList.add(`active`);
@@ -138,23 +217,14 @@ const mainScreenModule = (() => {
             menuContainer.classList.remove(`active`);
             menuBg.classList.remove(`active`);
         });
-
+        addItemBtn.addEventListener(`click`, addItem);
     };
 
-    function getActiveList() {
-        let activeList = LISTS.find(list => list.active == true);
-        if (!activeList) activeList = LISTS[0];
-        return activeList.title;
-    };
-
-    function setupActiveList() {
-        //Update Header Title
-        const headerListName = document.getElementById(`headerListName`);
-        headerListName.innerText = getActiveList();
-    }
+    events.subscribe(`listUpdate`, updateLists);
+    events.subscribe(`changeActiveList`, updateActiveList);
 
     (function init() {
         initListeners();
-        setupActiveList();
+        getStartupList();
     }());
 })();

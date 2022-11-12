@@ -186,10 +186,17 @@ const mainScreenModule = (() => {
         });
     };
 
+    function checkCustomList(activeList) {
+        const addItemBtn = document.getElementById(`addItem`);
+        if (activeList.custom == false) addItemBtn.classList.add(`removed`);
+        else addItemBtn.classList.remove(`removed`);
+    };
+
     function updateActiveList() {
         const activeList = listManager.getActiveList();
         updateHeader(activeList);
         updateListItems(activeList);
+        checkCustomList(activeList);
     };
 
     function updateCheckbox(event) {
@@ -264,7 +271,6 @@ const mainScreenModule = (() => {
     };
 
     (function init() {
-        //Don't include add-item button on premade lists
         initListeners();
         updateActiveList();
     }());

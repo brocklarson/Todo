@@ -26,8 +26,54 @@ class List {
     /* add item, remove item*/
 }
 
-const menuModule = (() => {
+const listManager = (() => {
     let LISTS = [];
+
+    const createNewList = (title, icon = `checklist`, custom = true) => {
+        let list = new List(title, [], icon, custom);
+        LISTS.push(list);
+    };
+
+    const setActiveList = (event) => {
+        LISTS.forEach(list => {
+            list.isActive = false;
+        });
+        const activeList = LISTS.find(list => list.title == event.target.name);
+        activeList.isActive = true;
+    };
+
+    const getActiveList = () => {
+        let activeList = LISTS.find(list => list.active == true);
+        if (!activeList) activeList = LISTS[0];
+        return activeList;
+    };
+
+    const getLists = () => {
+        return LISTS;
+    };
+
+    function initLists() {
+        createNewList(`Today`, `today`, false);
+        createNewList(`Tomorrow`, `event`, false);
+        createNewList(`This Week`, `date_range`, false);
+
+        createNewList(`To-Do`, `checklist`, true);
+        ////Search local storage and add any lists to customLists here
+    };
+
+    (function init() {
+        initLists();
+    })();
+
+    return {
+        createNewList,
+        getLists,
+        setActiveList,
+        getActiveList
+    }
+})();
+
+const menuModule = (() => {
 
     function closeMenu() {
         const menuContainer = document.getElementById(`menu`);
@@ -37,24 +83,16 @@ const menuModule = (() => {
         menuBg.classList.remove(`active`);
     };
 
-    function setActiveList(event) {
-        LISTS.forEach(list => {
-            list.isActive = false;
-        });
-        const activeList = LISTS.find(list => list.title == event.target.name);
-        activeList.isActive = true;
-
+    function updateSelectedBtn(event) {
         document.querySelectorAll(`.selected`).forEach(el => {
             el.classList.remove(`selected`);
         });
         event.target.classList.add(`selected`);
-
-        events.publish(`listUpdate`, LISTS);
-        events.publish(`changeActiveList`, activeList);
     };
 
     function handleListClick(event) {
-        setActiveList(event);
+        listManager.setActiveList(event);
+        updateSelectedBtn(event);
         closeMenu();
     };
 
@@ -63,8 +101,12 @@ const menuModule = (() => {
     };
 
     function makeBtn(list) {
-        const btn = document.createElement(`button`);
+        let container;
 
+        if (list.custom == false) container = document.getElementById(`premadeLists`);
+        else container = document.getElementById(`customLists`);
+
+        const btn = document.createElement(`button`);
         btn.classList.add(`menu-buttons`);
         btn.id = list.title.replace(/\s/g, "");
         btn.name = list.title;
@@ -76,40 +118,17 @@ const menuModule = (() => {
         const btnText = document.createElement(`span`);
         btnText.innerText = list.title;
 
+        container.appendChild(btn);
         btn.appendChild(iconSpan);
         btn.appendChild(btnText);
 
         setBtnListener(btn);
-        return btn;
-    };
-
-    function setupList(title, icon = `checklist`, custom = true) {
-        let list = new List(title, [], icon, custom);
-        let container;
-
-        if (custom == false) container = document.getElementById(`premadeLists`);
-        else container = document.getElementById(`customLists`);
-
-        const btn = makeBtn(list);
-        container.appendChild(btn);
-
-        LISTS.push(list);
-
-        events.publish(`listUpdate`, LISTS);
     };
 
     function addNewList() {
         const listName = prompt(`New List Name:`);
-        setupList(listName, `checklist`, true);
-    };
-
-    function initLists() {
-        setupList(`Today`, `today`, false);
-        setupList(`Tomorrow`, `event`, false);
-        setupList(`This Week`, `date_range`, false);
-
-        setupList(`To-Do`, `checklist`, true);
-        ////Search local storage and add any lists to customLists here
+        listManager.createNewList(listName, `checklist`, true);
+        makeBtn({ title: listName, icon: `checklist`, custom: true });
     };
 
     function addListListener() {
@@ -117,40 +136,25 @@ const menuModule = (() => {
         addListBtn.addEventListener(`click`, addNewList);
     };
 
-    const getLists = () => {
-        return LISTS;
-    }
+    function initLists() {
+        const lists = listManager.getLists();
+        lists.forEach(list => {
+            makeBtn(list);
+        });
+    };
 
     (function init() {
         initLists();
         addListListener();
     }());
 
-    return { getLists };
 })();
 
 const mainScreenModule = (() => {
-    let LISTS = [];
-
-    function getActiveList() {
-        let activeList = LISTS.find(list => list.active == true);
-        if (!activeList) activeList = LISTS[0];
-        return activeList.title;
-    };
-
-    function updateActiveList() {
-        //Update Header Title
+    function updateHeader() {
         const headerListName = document.getElementById(`headerListName`);
-        headerListName.innerText = getActiveList();
-    }
-
-    function updateLists(pubsubData) {
-        LISTS = pubsubData;
-    }
-
-    function getStartupList() {
-        LISTS = menuModule.getLists();
-        updateActiveList();
+        const activeList = listManager.getActiveList();
+        headerListName.innerText = activeList.title;
     }
 
     function updateCheckbox(event) {
@@ -170,6 +174,7 @@ const mainScreenModule = (() => {
     }
 
     function expandItem(event) {
+        //still todo
         return;
     }
 
@@ -220,11 +225,8 @@ const mainScreenModule = (() => {
         addItemBtn.addEventListener(`click`, addItem);
     };
 
-    events.subscribe(`listUpdate`, updateLists);
-    events.subscribe(`changeActiveList`, updateActiveList);
-
     (function init() {
         initListeners();
-        getStartupList();
+        updateHeader();
     }());
 })();

@@ -23,7 +23,16 @@ class List {
         return this.active;
     }
 
-    /* add item, remove item*/
+    newItem(itemName) {
+        this.items.push({ name: itemName, notes: ``, completed: false });
+    }
+
+    updateItemStatus(itemName) {
+        const item = this.items.find(item => item.name === itemName);
+        item.completed = !item.completed;
+    }
+
+    /* remove item, change item status, change item name, change list title*/
 }
 
 const listManager = (() => {
@@ -43,9 +52,15 @@ const listManager = (() => {
     };
 
     const getActiveList = () => {
-        let activeList = LISTS.find(list => list.active == true);
+        let activeList = LISTS.find(list => list.isActive == true);
         if (!activeList) activeList = LISTS[0];
         return activeList;
+    };
+
+    const manageItems = (itemName, action) => {
+        const list = getActiveList();
+        if (action === `new`) list.newItem(itemName);
+        if (action === `statusChange`) list.updateItemStatus(itemName);
     };
 
     const getLists = () => {
@@ -69,7 +84,8 @@ const listManager = (() => {
         createNewList,
         getLists,
         setActiveList,
-        getActiveList
+        getActiveList,
+        manageItems
     }
 })();
 
@@ -92,6 +108,7 @@ const menuModule = (() => {
 
     function handleListClick(event) {
         listManager.setActiveList(event);
+        events.publish(`updateActiveList`, event)
         updateSelectedBtn(event);
         closeMenu();
     };
@@ -126,7 +143,7 @@ const menuModule = (() => {
     };
 
     function addNewList() {
-        const listName = prompt(`New List Name:`);
+        const listName = prompt(`New List Name:`); //Setup validation that that list name doesn't already exist
         listManager.createNewList(listName, `checklist`, true);
         makeBtn({ title: listName, icon: `checklist`, custom: true });
     };
@@ -151,15 +168,22 @@ const menuModule = (() => {
 })();
 
 const mainScreenModule = (() => {
+    events.subscribe(`updateActiveList`, updateActiveList);
+
     function updateHeader() {
         const headerListName = document.getElementById(`headerListName`);
         const activeList = listManager.getActiveList();
         headerListName.innerText = activeList.title;
+    };
+
+    function updateActiveList() {
+        updateHeader();
+        //update list items
     }
 
     function updateCheckbox(event) {
         const checkbox = event.target;
-        const li = event.target.parentNode
+        const li = event.target.parentNode;
         const text = li.children[1];
 
         if (checkbox.innerText === `check_box_outline_blank`) {
@@ -171,20 +195,22 @@ const mainScreenModule = (() => {
             text.style.setProperty(`text-decoration`, `none`);
             li.style.setProperty(`opacity`, `100%`);
         }
-    }
+
+        listManager.manageItems(text.innerText, `statusChange`);
+    };
 
     function expandItem(event) {
         //still todo
         return;
-    }
+    };
 
     function setItemListener(icon, itemText) {
         icon.addEventListener('click', updateCheckbox);
         itemText.addEventListener('click', expandItem);
-    }
+    };
 
     function setupNewItem(itemName) {
-        const ul = document.getElementById(`listItems`)
+        const ul = document.getElementById(`listItems`);
 
         const li = document.createElement(`li`);
         li.classList.add(`list-item`);
@@ -201,12 +227,13 @@ const mainScreenModule = (() => {
         li.appendChild(itemText);
 
         setItemListener(icon, itemText);
-    }
+    };
 
     function addItem() {
-        const itemName = prompt(`New List Item:`);
-        setupNewItem(itemName)
-    }
+        const itemName = prompt(`New List Item:`); //Setup validation that that item name doesn't already exist
+        setupNewItem(itemName);
+        listManager.manageItems(itemName, `new`);
+    };
 
     function initListeners() {
         const menuButton = document.getElementById(`menuBtn`);

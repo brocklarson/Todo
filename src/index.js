@@ -32,7 +32,7 @@ class List {
         item.completed = !item.completed;
     }
 
-    /* remove item, change item status, change item name, change list title*/
+    /* remove item, change item name, change list title*/
 }
 
 const listManager = (() => {
@@ -170,16 +170,27 @@ const menuModule = (() => {
 const mainScreenModule = (() => {
     events.subscribe(`updateActiveList`, updateActiveList);
 
-    function updateHeader() {
+    function updateHeader(activeList) {
         const headerListName = document.getElementById(`headerListName`);
-        const activeList = listManager.getActiveList();
         headerListName.innerText = activeList.title;
     };
 
+    function updateListItems(activeList) {
+        const li = document.getElementsByClassName(`list-item`);
+        while (li.length > 0) {
+            li[0].parentNode.removeChild(li[0]);
+        }
+
+        activeList.items.forEach(item => {
+            setupNewItem(item.name, item.completed);
+        });
+    };
+
     function updateActiveList() {
-        updateHeader();
-        //update list items
-    }
+        const activeList = listManager.getActiveList();
+        updateHeader(activeList);
+        updateListItems(activeList);
+    };
 
     function updateCheckbox(event) {
         const checkbox = event.target;
@@ -209,7 +220,7 @@ const mainScreenModule = (() => {
         itemText.addEventListener('click', expandItem);
     };
 
-    function setupNewItem(itemName) {
+    function setupNewItem(itemName, completed) {
         const ul = document.getElementById(`listItems`);
 
         const li = document.createElement(`li`);
@@ -231,7 +242,7 @@ const mainScreenModule = (() => {
 
     function addItem() {
         const itemName = prompt(`New List Item:`); //Setup validation that that item name doesn't already exist
-        setupNewItem(itemName);
+        setupNewItem(itemName, false);
         listManager.manageItems(itemName, `new`);
     };
 
@@ -253,7 +264,8 @@ const mainScreenModule = (() => {
     };
 
     (function init() {
+        //Don't include add-item button on premade lists
         initListeners();
-        updateHeader();
+        updateActiveList();
     }());
 })();

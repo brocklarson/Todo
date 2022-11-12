@@ -80,7 +80,12 @@
 }
 
 .add-item {
+    display: initial;
     cursor: pointer;
+}
+
+.add-item.removed {
+    display: none;
 }
 
 

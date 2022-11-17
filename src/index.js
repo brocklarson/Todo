@@ -1,5 +1,7 @@
 import { events } from './pubsub.js';
 
+//set code to handle if console.prompt is cancelled
+
 class List {
     constructor(title,
         items = [],
@@ -17,22 +19,27 @@ class List {
     set isActive(value) {
         if (value) this.active = true;
         else this.active = false;
-    }
+    };
 
     get isActive() {
         return this.active;
-    }
+    };
 
     newItem(itemName) {
-        this.items.push({ name: itemName, notes: ``, completed: false });
-    }
+        this.items.push({ name: itemName, notes: ``, dueDate: ``, completed: false });
+    };
 
     updateItemStatus(itemName) {
         const item = this.items.find(item => item.name === itemName);
         item.completed = !item.completed;
-    }
+    };
 
-    /* remove item, change item name, change list title*/
+    deleteItem(itemName) {
+        const index = this.items.findIndex(item => item.name === itemName);
+        this.items.splice(index, 1);
+    };
+
+    /*change item name */
 }
 
 const listManager = (() => {
@@ -44,11 +51,17 @@ const listManager = (() => {
     };
 
     const setActiveList = (event) => {
+        let selectedList;
+        if (event) selectedList = event.target.name;
+        else selectedList = LISTS[0].title;
+
         LISTS.forEach(list => {
             list.isActive = false;
         });
-        const activeList = LISTS.find(list => list.title == event.target.name);
+        const activeList = LISTS.find(list => list.title == selectedList);
         activeList.isActive = true;
+
+        events.publish(`updateActiveList`);
     };
 
     const getActiveList = () => {
@@ -66,6 +79,22 @@ const listManager = (() => {
     const getLists = () => {
         return LISTS;
     };
+
+    const deleteList = () => {
+        if (!window.confirm('Delete List?')) return;
+        const activeList = getActiveList();
+        const index = LISTS.findIndex(list => list.title === activeList.title);
+        LISTS.splice(index, 1);
+        events.publish(`deleteList`, activeList.title);
+    }
+
+    const deleteItem = (event) => {
+        if (!window.confirm('Delete Item?')) return;
+        const list = getActiveList();
+        const itemName = event.target.parentNode.childNodes[1].innerText;
+        list.deleteItem(itemName);
+        events.publish(`deleteItem`, itemName);
+    }
 
     function initLists() {
         createNewList(`Today`, `today`, false);
@@ -85,11 +114,21 @@ const listManager = (() => {
         getLists,
         setActiveList,
         getActiveList,
-        manageItems
+        manageItems,
+        deleteList,
+        deleteItem
     }
 })();
 
 const menuModule = (() => {
+    events.subscribe(`deleteList`, resetLists);
+
+    function resetLists(listName) {
+        const menuLists = document.querySelectorAll(`.menu-buttons`);
+        const element = Array.from(menuLists).find(list => list.name === listName);
+        element.remove();
+        listManager.setActiveList();
+    };
 
     function closeMenu() {
         const menuContainer = document.getElementById(`menu`);
@@ -100,15 +139,21 @@ const menuModule = (() => {
     };
 
     function updateSelectedBtn(event) {
+        let selectedList;
+        if (event) selectedList = event.target;
+        else {
+            const activeList = listManager.getActiveList();
+            const menuLists = document.querySelectorAll(`.menu-buttons`);
+            selectedList = Array.from(menuLists).find(list => list.name === activeList.title);
+        }
         document.querySelectorAll(`.selected`).forEach(el => {
             el.classList.remove(`selected`);
         });
-        event.target.classList.add(`selected`);
+        selectedList.classList.add(`selected`);
     };
 
     function handleListClick(event) {
         listManager.setActiveList(event);
-        events.publish(`updateActiveList`, event)
         updateSelectedBtn(event);
         closeMenu();
     };
@@ -143,7 +188,21 @@ const menuModule = (() => {
     };
 
     function addNewList() {
-        const listName = prompt(`New List Name:`); //Setup validation that that list name doesn't already exist
+        let listName = prompt(`New List Name:`);
+        const lists = listManager.getLists();
+
+        let invalid = lists.find(list => list.title === listName);
+        let counter = 0;
+        while (invalid) {
+            listName = prompt(`List Name already used. Please use a different list name:`);
+            invalid = lists.find(list => list.title === listName);
+            counter++;
+            if (counter >= 5) {
+                window.alert(`Error creating list. Please try again`);
+                return;
+            }
+        };
+
         listManager.createNewList(listName, `checklist`, true);
         makeBtn({ title: listName, icon: `checklist`, custom: true });
     };
@@ -163,12 +222,20 @@ const menuModule = (() => {
     (function init() {
         initLists();
         addListListener();
+        updateSelectedBtn();
     }());
 
 })();
 
 const mainScreenModule = (() => {
     events.subscribe(`updateActiveList`, updateActiveList);
+    events.subscribe(`deleteItem`, deleteListItem);
+
+    function deleteListItem(itemName) {
+        const items = document.querySelectorAll(`.list-item`);
+        const element = Array.from(items).find(item => item.childNodes[1].innerText === itemName);
+        element.remove();
+    };
 
     function updateHeader(activeList) {
         const headerListName = document.getElementById(`headerListName`);
@@ -188,8 +255,15 @@ const mainScreenModule = (() => {
 
     function checkCustomList(activeList) {
         const addItemBtn = document.getElementById(`addItem`);
-        if (activeList.custom == false) addItemBtn.classList.add(`removed`);
-        else addItemBtn.classList.remove(`removed`);
+        const listOptionsIcon = document.getElementById(`listOptions`);
+
+        if (activeList.custom == false) {
+            addItemBtn.classList.add(`removed`);
+            listOptionsIcon.classList.add(`removed`);
+        } else {
+            addItemBtn.classList.remove(`removed`);
+            listOptionsIcon.classList.remove(`removed`);
+        }
     };
 
     function updateActiveList() {
@@ -222,9 +296,11 @@ const mainScreenModule = (() => {
         return;
     };
 
-    function setItemListener(icon, itemText) {
+
+
+    function setItemListener(icon, itemOptions) {
         icon.addEventListener('click', updateCheckbox);
-        itemText.addEventListener('click', expandItem);
+        itemOptions.addEventListener(`click`, listManager.deleteItem);
     };
 
     function setupNewItem(itemName, completed) {
@@ -234,21 +310,42 @@ const mainScreenModule = (() => {
         li.classList.add(`list-item`);
 
         const icon = document.createElement(`span`);
-        icon.classList.add(`material-symbols-outlined`);
+        icon.classList.add(`material-symbols-outlined`, `item-checkbox`);
         icon.innerText = `check_box_outline_blank`;
+        //check if item is completed here
 
         const itemText = document.createElement(`span`);
+        itemText.classList.add(`item-text`);
         itemText.innerText = itemName;
+
+        const itemOptions = document.createElement(`span`);
+        itemOptions.classList.add(`material-symbols-outlined`, `item-options`);
+        itemOptions.innerText = `more_vert`;
 
         ul.insertBefore(li, document.getElementById(`addItem`));
         li.appendChild(icon);
         li.appendChild(itemText);
+        li.appendChild(itemOptions);
 
-        setItemListener(icon, itemText);
+        setItemListener(icon, itemOptions);
     };
 
     function addItem() {
-        const itemName = prompt(`New List Item:`); //Setup validation that that item name doesn't already exist
+        const list = listManager.getActiveList();
+        let itemName = prompt(`New List Item:`);
+
+        let invalid = list.items.find(item => item.name === itemName);
+        let counter = 0;
+        while (invalid) {
+            itemName = prompt(`Item already exists. Please enter a different item:`);
+            invalid = list.items.find(item => item.name === itemName);
+            counter++;
+            if (counter >= 5) {
+                window.alert(`Error creating item. Please try again`);
+                return;
+            }
+        };
+
         setupNewItem(itemName, false);
         listManager.manageItems(itemName, `new`);
     };
@@ -258,6 +355,7 @@ const mainScreenModule = (() => {
         const menuContainer = document.getElementById(`menu`);
         const menuBg = document.getElementById(`menuBg`);
         const addItemBtn = document.getElementById(`addItem`);
+        const listOptions = document.getElementById(`listOptions`);
 
         menuButton.addEventListener(`click`, function() {
             if (!menuContainer.classList.contains(`active`)) menuContainer.classList.add(`active`);
@@ -268,6 +366,7 @@ const mainScreenModule = (() => {
             menuBg.classList.remove(`active`);
         });
         addItemBtn.addEventListener(`click`, addItem);
+        listOptions.addEventListener(`click`, listManager.deleteList);
     };
 
     (function init() {

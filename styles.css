@@ -16,6 +16,7 @@
 /*HEADER*/
 
 .header {
+    background: var(--background-color);
     align-items: center;
     border-bottom: solid 1px black;
     display: flex;
@@ -35,27 +36,43 @@
 }
 
 .header-icon {
+    color: var(--primary-color) !important;
     font-size: 36px !important;
 }
 
-.header-title-span {
-    display: inline-block;
+.header-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     flex-grow: 1;
     overflow: hidden;
     padding-left: 8px;
     white-space: nowrap;
 }
 
-.header-title-span h1 {
-    float: left;
+.header-title-container h1 {
+    color: var(--primary-color);
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.list-options-icon {
+    color: var(--primary-color) !important;
+    display: initial;
+    font-size: 36px !important;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+.list-options-icon.removed {
+    display: none;
 }
 
 
 /* MAIN SCREEN */
 
 .main-container {
+    background-color: var(--background-color);
     position: fixed;
     top: 10vh;
     left: 0;
@@ -72,10 +89,20 @@
 .main-container ul li {
     display: flex;
     align-items: center;
+    margin: 8px 0;
 }
 
-.main-container ul li span {
+.item-checkbox {
+    cursor: pointer;
+}
+
+.item-text {
     margin: 2px;
+    flex-grow: 1;
+}
+
+.item-options {
+    margin-right: 8px;
     cursor: pointer;
 }
 
@@ -187,6 +214,7 @@
 /* FOOTER */
 
 footer {
+    background-color: var(--background-color);
     align-items: center;
     bottom: 0;
     color: var(--primary-color);

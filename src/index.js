@@ -1,7 +1,6 @@
 import { events } from './pubsub.js';
 import { getLocalStorage } from './storage.js';
 
-//Update checkbox when setting up list items read from local storage
 //Add functionality for due dates
 //Update due date when setting up lists items read from local storage
 
@@ -172,6 +171,7 @@ const menuModule = (() => {
             const menuLists = document.querySelectorAll(`.menu-buttons`);
             selectedList = Array.from(menuLists).find(list => list.name === activeList.title);
         }
+
         document.querySelectorAll(`.selected`).forEach(el => {
             el.classList.remove(`selected`);
         });
@@ -276,7 +276,7 @@ const mainScreenModule = (() => {
         }
 
         activeList.items.forEach(item => {
-            setupNewItem(item.name, item.completed);
+            setupNewItem(item);
         });
     };
 
@@ -300,9 +300,12 @@ const mainScreenModule = (() => {
         checkCustomList(activeList);
     };
 
-    function updateCheckbox(event) {
-        const checkbox = event.target;
-        const li = event.target.parentNode;
+    function updateCheckbox(event, data) {
+        let checkbox;
+
+        if (event) checkbox = event.target;
+        else checkbox = data;
+        const li = checkbox.parentNode;
         const text = li.children[1];
 
         if (checkbox.innerText === `check_box_outline_blank`) {
@@ -315,22 +318,15 @@ const mainScreenModule = (() => {
             li.style.setProperty(`opacity`, `100%`);
         }
 
-        listManager.manageItems(text.innerText, `statusChange`);
+        if (event) listManager.manageItems(text.innerText, `statusChange`);
     };
-
-    function expandItem(event) {
-        //still todo
-        return;
-    };
-
-
 
     function setItemListener(icon, itemOptions) {
         icon.addEventListener('click', updateCheckbox);
         itemOptions.addEventListener(`click`, listManager.deleteItem);
     };
 
-    function setupNewItem(itemName, completed) {
+    function setupNewItem(item) {
         const ul = document.getElementById(`listItems`);
 
         const li = document.createElement(`li`);
@@ -339,11 +335,10 @@ const mainScreenModule = (() => {
         const icon = document.createElement(`span`);
         icon.classList.add(`material-symbols-outlined`, `item-checkbox`);
         icon.innerText = `check_box_outline_blank`;
-        //check if item is completed when bringing in from localstorage
 
         const itemText = document.createElement(`span`);
         itemText.classList.add(`item-text`);
-        itemText.innerText = itemName;
+        itemText.innerText = item.name;
 
         //Add due date functionality
         const dueDate = document.createElement(`p`);
@@ -360,6 +355,7 @@ const mainScreenModule = (() => {
         li.appendChild(dueDate);
         li.appendChild(itemOptions);
 
+        if (item.completed) updateCheckbox(null, icon);
         setItemListener(icon, itemOptions);
     };
 
@@ -380,7 +376,7 @@ const mainScreenModule = (() => {
             }
         };
 
-        setupNewItem(itemName, false);
+        setupNewItem({ name: itemName, notes: ``, dueDate: ``, completed: false });
         listManager.manageItems(itemName, `new`);
     };
 

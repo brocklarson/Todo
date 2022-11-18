@@ -59,9 +59,14 @@
 .list-options-icon {
     color: var(--primary-color) !important;
     display: initial;
-    font-size: 36px !important;
+    font-size: 30px !important;
     cursor: pointer;
     margin-right: 8px;
+}
+
+.list-options-icon:hover {
+    transform: scale(1.03) rotate(10deg);
+    transition: 0.2s;
 }
 
 .list-options-icon.removed {
@@ -99,11 +104,24 @@
 .item-text {
     margin: 2px;
     flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-dueDate {
+    cursor: pointer;
+    margin-right: 8px;
 }
 
 .item-options {
     margin-right: 8px;
     cursor: pointer;
+}
+
+.item-options:hover {
+    transform: scale(1.03) rotate(10deg);
+    transition: 0.2s;
 }
 
 .add-item {
@@ -208,6 +226,30 @@
     opacity: 0.3;
     pointer-events: all;
     transition: 0.25s;
+}
+
+
+/* POPUP BOX */
+
+.popup-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 8px;
+    width: 80vw;
+    min-height: 20vh;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-color);
+    border: solid 1px black;
+    border-radius: 5px;
+    z-index: 5;
+}
+
+.popup-container.hide {
+    display: none;
 }
 
 

@@ -1,6 +1,9 @@
 import { events } from './pubsub.js';
+import { getLocalStorage } from './storage.js';
 
-//set code to handle if console.prompt is cancelled
+//Update checkbox when setting up list items read from local storage
+//Add functionality for due dates
+//Update due date when setting up lists items read from local storage
 
 class List {
     constructor(title,
@@ -38,29 +41,34 @@ class List {
         const index = this.items.findIndex(item => item.name === itemName);
         this.items.splice(index, 1);
     };
-
-    /*change item name */
 }
-
 const listManager = (() => {
     let LISTS = [];
 
-    const createNewList = (title, icon = `checklist`, custom = true) => {
-        let list = new List(title, [], icon, custom);
-        LISTS.push(list);
+    function updateLocalStorage(name, data) {
+        events.publish(`updateLocalStorage`, [name, data]);
     };
 
-    const setActiveList = (event) => {
+    const createNewList = (title, items = [], icon = `checklist`, custom = true, active = false) => {
+        let list = new List(title, items, icon, custom, active);
+        LISTS.push(list);
+        updateLocalStorage(`LISTS`, LISTS);
+    };
+
+    const setActiveList = (event, fromStorage = null) => {
         let selectedList;
         if (event) selectedList = event.target.name;
+        else if (fromStorage) selectedList = fromStorage.title;
         else selectedList = LISTS[0].title;
 
         LISTS.forEach(list => {
             list.isActive = false;
         });
+
         const activeList = LISTS.find(list => list.title == selectedList);
         activeList.isActive = true;
 
+        updateLocalStorage(`activeList`, activeList);
         events.publish(`updateActiveList`);
     };
 
@@ -74,6 +82,7 @@ const listManager = (() => {
         const list = getActiveList();
         if (action === `new`) list.newItem(itemName);
         if (action === `statusChange`) list.updateItemStatus(itemName);
+        updateLocalStorage(`LISTS`, LISTS);
     };
 
     const getLists = () => {
@@ -85,28 +94,45 @@ const listManager = (() => {
         const activeList = getActiveList();
         const index = LISTS.findIndex(list => list.title === activeList.title);
         LISTS.splice(index, 1);
+
+        updateLocalStorage(`LISTS`, LISTS);
         events.publish(`deleteList`, activeList.title);
-    }
+    };
 
     const deleteItem = (event) => {
         if (!window.confirm('Delete Item?')) return;
         const list = getActiveList();
         const itemName = event.target.parentNode.childNodes[1].innerText;
         list.deleteItem(itemName);
+
+        updateLocalStorage(`LISTS`, LISTS);
         events.publish(`deleteItem`, itemName);
-    }
+    };
 
     function initLists() {
-        createNewList(`Today`, `today`, false);
-        createNewList(`Tomorrow`, `event`, false);
-        createNewList(`This Week`, `date_range`, false);
+        if (getLocalStorage('LISTS')) {
+            const lists = getLocalStorage('LISTS');
+            lists.forEach(list => {
+                createNewList(list.title, list.items, list.icon, list.custom, list.active)
+            });
+        } else {
+            createNewList(`Today`, [], `today`, false, false);
+            createNewList(`Tomorrow`, [], `event`, false, false);
+            createNewList(`This Week`, [], `date_range`, false, false);
+            createNewList(`To-Do`, [], `checklist`, true, false);
+        };
+    };
 
-        createNewList(`To-Do`, `checklist`, true);
-        ////Search local storage and add any lists to customLists here
+    function initActiveList() {
+        if (getLocalStorage('activeList')) {
+            const activeList = getLocalStorage('activeList');
+            setActiveList(null, activeList);
+        } else {};
     };
 
     (function init() {
         initLists();
+        initActiveList();
     })();
 
     return {
@@ -188,8 +214,9 @@ const menuModule = (() => {
     };
 
     function addNewList() {
-        let listName = prompt(`New List Name:`);
         const lists = listManager.getLists();
+        let listName = prompt(`New List Name:`);
+        if (!listName) return;
 
         let invalid = lists.find(list => list.title === listName);
         let counter = 0;
@@ -203,7 +230,7 @@ const menuModule = (() => {
             }
         };
 
-        listManager.createNewList(listName, `checklist`, true);
+        listManager.createNewList(listName, [], `checklist`, true, false);
         makeBtn({ title: listName, icon: `checklist`, custom: true });
     };
 
@@ -312,19 +339,25 @@ const mainScreenModule = (() => {
         const icon = document.createElement(`span`);
         icon.classList.add(`material-symbols-outlined`, `item-checkbox`);
         icon.innerText = `check_box_outline_blank`;
-        //check if item is completed here
+        //check if item is completed when bringing in from localstorage
 
         const itemText = document.createElement(`span`);
         itemText.classList.add(`item-text`);
         itemText.innerText = itemName;
 
+        //Add due date functionality
+        const dueDate = document.createElement(`p`);
+        dueDate.classList.add(`item-dueDate`);
+        dueDate.innerText = `--/--/--`;
+
         const itemOptions = document.createElement(`span`);
         itemOptions.classList.add(`material-symbols-outlined`, `item-options`);
-        itemOptions.innerText = `more_vert`;
+        itemOptions.innerText = `delete`;
 
         ul.insertBefore(li, document.getElementById(`addItem`));
         li.appendChild(icon);
         li.appendChild(itemText);
+        li.appendChild(dueDate);
         li.appendChild(itemOptions);
 
         setItemListener(icon, itemOptions);
@@ -333,6 +366,7 @@ const mainScreenModule = (() => {
     function addItem() {
         const list = listManager.getActiveList();
         let itemName = prompt(`New List Item:`);
+        if (!itemName) return;
 
         let invalid = list.items.find(item => item.name === itemName);
         let counter = 0;

@@ -1,9 +1,6 @@
 import { events } from './pubsub.js';
 import { getLocalStorage } from './storage.js';
 
-//Add functionality for due dates
-//Update due date when setting up lists items read from local storage
-
 class List {
     constructor(title,
         items = [],
@@ -28,10 +25,10 @@ class List {
     };
 
     newItem(itemName) {
-        this.items.push({ name: itemName, notes: ``, dueDate: ``, completed: false });
+        this.items.push({ name: itemName, notes: ``, dueDate: null, completed: false });
     };
 
-    updateItemStatus(itemName) {
+    updateItemCompletion(itemName) {
         const item = this.items.find(item => item.name === itemName);
         item.completed = !item.completed;
     };
@@ -40,7 +37,13 @@ class List {
         const index = this.items.findIndex(item => item.name === itemName);
         this.items.splice(index, 1);
     };
+
+    setDueDate(itemName, date) {
+        const item = this.items.find(item => item.name === itemName);
+        item.dueDate = date;
+    }
 }
+
 const listManager = (() => {
     let LISTS = [];
 
@@ -67,6 +70,10 @@ const listManager = (() => {
         const activeList = LISTS.find(list => list.title == selectedList);
         activeList.isActive = true;
 
+        if (activeList.title === `Today`) setupToday();
+        if (activeList.title === `Tomorrow`) setupTomorrow();
+        if (activeList.title === `This Week`) setupThisWeek();
+
         updateLocalStorage(`activeList`, activeList);
         events.publish(`updateActiveList`);
     };
@@ -80,9 +87,17 @@ const listManager = (() => {
     const manageItems = (itemName, action) => {
         const list = getActiveList();
         if (action === `new`) list.newItem(itemName);
-        if (action === `statusChange`) list.updateItemStatus(itemName);
+        if (action === `statusChange`) list.updateItemCompletion(itemName);
         updateLocalStorage(`LISTS`, LISTS);
     };
+
+    const setDueDate = (event) => {
+        const list = getActiveList();
+        const date = event.target.value;
+        const itemName = event.target.parentNode.childNodes[1].innerText;
+        list.setDueDate(itemName, date);
+        updateLocalStorage(`LISTS`, LISTS);
+    }
 
     const getLists = () => {
         return LISTS;
@@ -108,6 +123,67 @@ const listManager = (() => {
         events.publish(`deleteItem`, itemName);
     };
 
+    function convertDateToString(date) {
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function setupToday() {
+        const list = LISTS[0];
+        list.items = [];
+        const date = new Date();
+        const today = convertDateToString(date);
+
+        //Start at i=3 to skip the premade lists
+        for (let i = 3; i < LISTS.length; i++) {
+            LISTS[i].items.forEach(item => {
+                if (item.dueDate == today) {
+                    LISTS[0].items.push(item);
+                };
+            });
+        };
+    };
+
+    function setupTomorrow() {
+        const list = LISTS[1];
+        list.items = [];
+        let date = new Date();
+        date.setDate(date.getDate() + 1);
+        const tomorrow = convertDateToString(date);
+
+        //Start at i=3 to skip the premade lists
+        for (let i = 3; i < LISTS.length; i++) {
+            LISTS[i].items.forEach(item => {
+                if (item.dueDate == tomorrow) {
+                    LISTS[1].items.push(item);
+                };
+            });
+        };
+    };
+
+    function setupThisWeek() {
+        const list = LISTS[2];
+        list.items = [];
+        const date = new Date();
+        const today = convertDateToString(date);
+        let week = new Date();
+        week.setDate(week.getDate() + 7);
+        week = convertDateToString(week);
+
+        //Start at i=3 to skip the premade lists
+        for (let i = 3; i < LISTS.length; i++) {
+            LISTS[i].items.forEach(item => {
+                if (item.dueDate >= today && item.dueDate <= week) {
+                    LISTS[2].items.push(item);
+                };
+            });
+        };
+
+        LISTS[2].items.sort((a, b) => a.dueDate > b.dueDate ? 1 : -1);
+    }
+
     function initLists() {
         if (getLocalStorage('LISTS')) {
             const lists = getLocalStorage('LISTS');
@@ -120,6 +196,7 @@ const listManager = (() => {
             createNewList(`This Week`, [], `date_range`, false, false);
             createNewList(`To-Do`, [], `checklist`, true, false);
         };
+
     };
 
     function initActiveList() {
@@ -141,7 +218,8 @@ const listManager = (() => {
         getActiveList,
         manageItems,
         deleteList,
-        deleteItem
+        deleteItem,
+        setDueDate
     }
 })();
 
@@ -321,9 +399,10 @@ const mainScreenModule = (() => {
         if (event) listManager.manageItems(text.innerText, `statusChange`);
     };
 
-    function setItemListener(icon, itemOptions) {
+    function setItemListener(icon, itemOptions, dueDate) {
         icon.addEventListener('click', updateCheckbox);
         itemOptions.addEventListener(`click`, listManager.deleteItem);
+        dueDate.addEventListener(`change`, listManager.setDueDate);
     };
 
     function setupNewItem(item) {
@@ -340,10 +419,10 @@ const mainScreenModule = (() => {
         itemText.classList.add(`item-text`);
         itemText.innerText = item.name;
 
-        //Add due date functionality
-        const dueDate = document.createElement(`p`);
+        const dueDate = document.createElement('input');
+        dueDate.type = `date`;
         dueDate.classList.add(`item-dueDate`);
-        dueDate.innerText = `--/--/--`;
+        dueDate.value = item.dueDate;
 
         const itemOptions = document.createElement(`span`);
         itemOptions.classList.add(`material-symbols-outlined`, `item-options`);
@@ -356,7 +435,7 @@ const mainScreenModule = (() => {
         li.appendChild(itemOptions);
 
         if (item.completed) updateCheckbox(null, icon);
-        setItemListener(icon, itemOptions);
+        setItemListener(icon, itemOptions, dueDate);
     };
 
     function addItem() {
@@ -376,7 +455,7 @@ const mainScreenModule = (() => {
             }
         };
 
-        setupNewItem({ name: itemName, notes: ``, dueDate: ``, completed: false });
+        setupNewItem({ name: itemName, notes: ``, dueDate: null, completed: false });
         listManager.manageItems(itemName, `new`);
     };
 

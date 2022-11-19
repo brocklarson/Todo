@@ -85,6 +85,7 @@
     width: 100vw;
     text-align: left;
     align-items: center;
+    overflow: scroll;
 }
 
 .main-container ul {
@@ -112,6 +113,8 @@
 .item-dueDate {
     cursor: pointer;
     margin-right: 8px;
+    background: none;
+    border: none;
 }
 
 .item-options {

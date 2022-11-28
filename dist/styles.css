@@ -104,10 +104,6 @@
     border-radius: 5px;
 }
 
-.main-container ul li:hover {
-    transform: scale(1.005);
-}
-
 .item-checkbox {
     cursor: pointer;
 }

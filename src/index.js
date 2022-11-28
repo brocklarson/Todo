@@ -42,6 +42,19 @@ class List {
         const item = this.items.find(item => item.name === itemName);
         item.dueDate = date;
     }
+
+    sortItems() {
+        console.log('here');
+        this.items.sort((a, b) => {
+            //sort completed items at end of list
+            if (a.completed > b.completed) return 1;
+            if (a.completed < b.completed) return -1;
+
+            //sort by due date
+            if (a.dueDate > b.dueDate) return 1;
+            if (a.dueDate < b.dueDate) return -1;
+        });
+    }
 }
 
 const listManager = (() => {
@@ -97,7 +110,8 @@ const listManager = (() => {
         const itemName = event.target.parentNode.childNodes[1].innerText;
         list.setDueDate(itemName, date);
         updateLocalStorage(`LISTS`, LISTS);
-    }
+        events.publish(`updateActiveList`);
+    };
 
     const getLists = () => {
         return LISTS;
@@ -180,9 +194,7 @@ const listManager = (() => {
                 };
             });
         };
-
-        LISTS[2].items.sort((a, b) => a.dueDate > b.dueDate ? 1 : -1);
-    }
+    };
 
     function initLists() {
         if (getLocalStorage('LISTS')) {
@@ -219,7 +231,7 @@ const listManager = (() => {
         manageItems,
         deleteList,
         deleteItem,
-        setDueDate
+        setDueDate,
     }
 })();
 
@@ -373,6 +385,7 @@ const mainScreenModule = (() => {
 
     function updateActiveList() {
         const activeList = listManager.getActiveList();
+        activeList.sortItems(activeList);
         updateHeader(activeList);
         updateListItems(activeList);
         checkCustomList(activeList);
@@ -385,18 +398,23 @@ const mainScreenModule = (() => {
         else checkbox = data;
         const li = checkbox.parentNode;
         const text = li.children[1];
+        const dueDate = li.children[2];
 
         if (checkbox.innerText === `check_box_outline_blank`) {
             checkbox.innerText = `check_box`;
             text.style.setProperty(`text-decoration`, `line-through`);
             li.style.setProperty(`opacity`, `50%`);
+            dueDate.style.setProperty(`text-decoration`, `line-through`);
         } else {
             checkbox.innerText = `check_box_outline_blank`;
             text.style.setProperty(`text-decoration`, `none`);
             li.style.setProperty(`opacity`, `100%`);
+            dueDate.style.setProperty(`text-decoration`, `none`);
         }
-
-        if (event) listManager.manageItems(text.innerText, `statusChange`);
+        if (event) {
+            listManager.manageItems(text.innerText, `statusChange`);
+            updateActiveList();
+        }
     };
 
     function setItemListener(icon, itemOptions, dueDate) {

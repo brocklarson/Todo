@@ -1,26 +1,10 @@
-import { events } from "./pubsub.js";
+import events from "./pubsub.js";
 
-events.subscribe('updateLocalStorage', function(data) { updateLocalStorage(data[0], data[1]) });
-
-function updateLocalStorage(name, data) {
-    if (_storageAvailable('localStorage')) {
-        localStorage.setItem(name, JSON.stringify(data));
-    }
-}
-
-function getLocalStorage(data) {
-    if (_storageAvailable('localStorage')) {
-        if (localStorage.getItem(data)) {
-            return JSON.parse(localStorage.getItem(data));
-        }
-    }
-}
-
-function _storageAvailable(type) {
+function storageAvailable(type) {
     let storage;
     try {
         storage = window[type];
-        let x = '__storage_test__';
+        const x = '__storage_test__';
         storage.setItem(x, x);
         storage.removeItem(x);
         return true;
@@ -40,4 +24,21 @@ function _storageAvailable(type) {
     }
 }
 
-export { getLocalStorage }
+function updateLocalStorage(name, data) {
+    if (storageAvailable('localStorage')) {
+        localStorage.setItem(name, JSON.stringify(data));
+    }
+}
+
+function getLocalStorage(data) {
+    if (storageAvailable('localStorage')) {
+        if (localStorage.getItem(data)) {
+            return JSON.parse(localStorage.getItem(data));
+        }
+    }
+    return false;
+}
+
+events.subscribe('updateLocalStorage', (data) => { updateLocalStorage(data[0], data[1]) });
+
+export default getLocalStorage;
